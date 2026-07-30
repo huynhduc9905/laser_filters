@@ -4,7 +4,7 @@ scan_to_scan_filter_chain:
       name: polygon_filter
       type: laser_filters/LaserScanPolygonFilter
       params:
-        polygon_frame: base_link
-        polygon: '[[0.0, 0.0], [0.1, 0.1], [0.1, 0.0], [0.0, -0.1]]'
+        polygon_frame: base_footprint
+        polygon: "[[1.0, 0.5], [-1.0, 0.5], [-1.0, -0.5], [1.0, -0.5]]"
         invert: false
         footprint_topic: base_footprint_exclude
