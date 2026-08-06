@@ -8,3 +8,9 @@ scan_to_scan_filter_chain:
         polygon: "[[1.0, 0.5], [-1.0, 0.5], [-1.0, -0.5], [1.0, -0.5]]"
         invert: false
         footprint_topic: base_footprint_exclude
+    filter2:
+      name: angle_filter
+      type: laser_filters/LaserScanAngularBoundsFilterInPlace
+      params:
+        lower_angle: 0.78539816339     
+        upper_angle: -0.78539816339    
