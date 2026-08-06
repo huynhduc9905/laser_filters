@@ -47,7 +47,6 @@ namespace laser_filters
     public:
       double lower_angle_;
       double upper_angle_;
-      bool replace_with_nan_;
 
       bool configure()
       {
@@ -60,38 +59,49 @@ namespace laser_filters
           return false;
         }
 
-        //toggle to use NaN for filtering scans; defaults to false for backward compatibility.
-        //https://github.com/ros-perception/laser_filters/pull/202
-        replace_with_nan_ = false;
-        getParam("replace_with_nan", replace_with_nan_);
-
         return true;
       }
 
       virtual ~LaserScanAngularBoundsFilterInPlace(){}
 
-      bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan){
-        filtered_scan = input_scan; //copy entire message
+      bool update(
+          const sensor_msgs::msg::LaserScan &input_scan,
+          sensor_msgs::msg::LaserScan &filtered_scan)
+      {
+        filtered_scan = input_scan;
 
         double current_angle = input_scan.angle_min;
         unsigned int count = 0;
-        float replace_value = replace_with_nan_ ? std::numeric_limits<float>::quiet_NaN() : input_scan.range_max + 1.0;
-        //loop through the scan and remove ranges at angles between lower_angle_ and upper_angle_
-        for(unsigned int i = 0; i < input_scan.ranges.size(); ++i){
-          if((current_angle > lower_angle_) && (current_angle < upper_angle_)){
+
+        const float replace_value = std::numeric_limits<float>::infinity();
+
+        for (size_t i = 0; i < input_scan.ranges.size(); ++i)
+        {
+          bool keep;
+
+          if (lower_angle_ <= upper_angle_) {
+            // Normal interval
+            keep = (current_angle >= lower_angle_) && (current_angle <= upper_angle_);
+          }
+          else {
+            // Wrapped interval
+            keep = (current_angle >= lower_angle_) || (current_angle <= upper_angle_);
+          }
+
+          // Remove everything outside the selected interval
+          if (!keep) {
             filtered_scan.ranges[i] = replace_value;
-            if(i < filtered_scan.intensities.size()){
-              filtered_scan.intensities[i] = 0.0;
+
+            if (i < filtered_scan.intensities.size()) {
+              filtered_scan.intensities[i] = 0.0f;
             }
-            count++;
+
+            ++count;
           }
           current_angle += input_scan.angle_increment;
         }
 
-        RCLCPP_DEBUG(logging_interface_->get_logger(), "Filtered out %u points from the laser scan.", count);
-
         return true;
-
       }
   };
 };

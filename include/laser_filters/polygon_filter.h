@@ -43,6 +43,7 @@
 #ifndef POLYGON_FILTER_H
 #define POLYGON_FILTER_H
 
+#include <memory>
 #include <mutex>
 
 #include <filters/filter_base.hpp>
@@ -56,6 +57,7 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
+#include <tf2_ros/create_timer_ros.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
 
@@ -225,7 +227,13 @@ namespace laser_filters
 class LaserScanPolygonFilterBase : public filters::FilterBase<sensor_msgs::msg::LaserScan>, public rclcpp_lifecycle::LifecycleNode {
 public:
 
-  LaserScanPolygonFilterBase() : rclcpp_lifecycle::LifecycleNode("laser_scan_polygon_filter"), buffer_(get_clock()), tf_(buffer_){};
+  LaserScanPolygonFilterBase()
+  : rclcpp_lifecycle::LifecycleNode("laser_scan_polygon_filter"), buffer_(get_clock()), tf_(buffer_)
+  {
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+      get_node_base_interface(), get_node_timers_interface());
+    buffer_.setCreateTimerInterface(timer_interface);
+  };
 
   virtual bool configure()
   {
@@ -440,14 +448,14 @@ public:
       {
         if (inPolygon(point))
         {
-          output_scan.ranges[index] = std::numeric_limits<float>::quiet_NaN();
+          output_scan.ranges[index] = std::numeric_limits<float>::infinity();
         }
       }
       else
       {
         if (!inPolygon(point))
         {
-          output_scan.ranges[index] = std::numeric_limits<float>::quiet_NaN();
+          output_scan.ranges[index] = std::numeric_limits<float>::infinity();
         }
       }
     }
@@ -511,7 +519,7 @@ public:
 
       if (invert_filter_ != inPolygon(point))
       {
-        output_scan.ranges[i] = std::numeric_limits<float>::quiet_NaN();
+        output_scan.ranges[i] = std::numeric_limits<float>::infinity();
       }
 
       ++i;

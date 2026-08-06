@@ -70,6 +70,11 @@ ScanToScanFilterChain::ScanToScanFilterChain(
   this->get_parameter("tf_message_filter_tolerance", tf_filter_tolerance_);
   this->get_parameter("scan_filtered_history_depth", scan_filtered_history_depth_);
 
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    this->get_node_base_interface(),
+    this->get_node_timers_interface());
+  buffer_.setCreateTimerInterface(timer_interface);
+
   if (!tf_message_filter_target_frame_.empty()) {
     tf_.reset(new tf2_ros::TransformListener(buffer_));
     tf_filter_.reset(
@@ -101,20 +106,20 @@ ScanToScanFilterChain::ScanToScanFilterChain(
         if (s.current_count == 0) {
           scan_sub_.unsubscribe();
         } else if (!scan_sub_.getSubscriber()) {
-          scan_sub_.subscribe(this, "scan", rclcpp::SensorDataQoS());
+          scan_sub_.subscribe(this, "scan_distorted", rclcpp::SensorDataQoS());
         }
       };
     output_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>(
-      "scan_filtered", scan_filtered_history_depth_, pub_options);
+      "scan", scan_filtered_history_depth_, pub_options);
   } else {
     output_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>(
-      "scan_filtered", scan_filtered_history_depth_);
-    scan_sub_.subscribe(this, "scan", rclcpp::SensorDataQoS());
+      "scan", scan_filtered_history_depth_);
+    scan_sub_.subscribe(this, "scan_distorted", rclcpp::SensorDataQoS());
   }
   #else
   output_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>(
-    "scan_filtered", scan_filtered_history_depth_);
-  scan_sub_.subscribe(this, "scan", rclcpp::SensorDataQoS());
+    "scan", scan_filtered_history_depth_);
+  scan_sub_.subscribe(this, "scan_distorted", rclcpp::SensorDataQoS());
   #endif
 }
 
